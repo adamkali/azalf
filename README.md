@@ -1,4 +1,4 @@
-# Adam's Zillenial Arch Linux Script (AZALS)
+# Adam's Zillenial Arch Linux Flavor (AZALF)
 HI SISTERS! This will be meant as a need-to-have/wish-list for an endgame Distro/Flavor/Whatever Linux For me. The Endgoal is to be able to create a script that completly automates the install of the script. So if I have to use a gui at any point of the install, I dont care why, I will not be putting it in the script. Now if I get to a desktop enironment and lets say I also endup adding virtualization and will need to use a gui for that fine, but the install *needs* to be able to run automatically in a virtual environment.
 
 ## Table of contents
@@ -17,7 +17,7 @@ HI SISTERS! This will be meant as a need-to-have/wish-list for an endgame Distro
 
 ## Get Started.
 
-All you will need to get started, is curl... and that is it. This should take care of the rest. Then type: `curl https://github.com/adamkali/azals.git && cd azals && sh run.sh` 
+All you will need to get started, is curl... and that is it. This should take care of the rest. Then type: `curl https://github.com/adamkali/azalf.git && cd azalf && sh run.sh` 
 
 ### Keybindings
 
