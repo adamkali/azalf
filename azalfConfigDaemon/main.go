@@ -45,6 +45,32 @@ package main
                             \\
 */
 
+/*
+	A few notes about the daemon:
+	- This is a simple daemon that will be used to monitor the hardware
+		and serve the config to many programs within the machine.
+	- This is configurable through the ~/.config/azalf/.azalf.yaml file
+		You can change the config file to your liking, primarly through
+		html color codes. The config file also holds sizing information
+		for any sizing elements.
+	- In this way I want to be able to create a simple homogeneous design
+		for the look and feel of the daemon.
+		for the time being I only have the config server in a state that
+		I feel is good enough for production, but that is mosty because
+		of the gpu. :/
+	- However, once I get into Arch Proper, then I will go back and finish the
+		daemon and serve system information.
+	- The daemon really just needs to be started and enabled by the usual
+		systemd way of starting the daemon.
+		- sudo systemctl start azalf.service
+		- sudo systemctl enable azalf.service
+	- Then the you can simple do a http://localhost:9999/config request to get
+		the config file in your configurable application's request method.
+
+	Happy hacking!
+
+*/
+
 import (
 	"bufio"
 	"bytes"
@@ -55,7 +81,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
@@ -242,13 +267,14 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
+	// TODO: Later in Arch Linux proper.
 	// create hardware info to be written to
 	// /var/run/azalfConfigDaemon/hardware.json
 	//
 	// this is going to be used by dashboard and the bar
 	// to display hardware info
-	hardwareInfo := HardwareInfo{}
-	go hardwareListener(&hardwareInfo)
+	//hardwareInfo := HardwareInfo{}
+	//go hardwareListener(&hardwareInfo)
 
 	go worker(&config)
 
@@ -451,10 +477,10 @@ func calculateInstantaneousUsage() CPUUsageTunnel {
 	VRamPercent string `yaml:"vram_usage"; json:"vram_usage_percent"`
 } `yaml:"gpu"; json:"gpu"` */
 
-// TODO: Finish this
+// TODO: Finish this within arch linux
 // get the GPU information by using lspci
 func (h *HardwareInfo) getGPUInfo() {
-	// Get the GPU info from lspci
+	/*// Get the GPU info from lspci
 	//
 	// first get the name of the GPU
 	// then get the driver of the GPU
@@ -484,16 +510,19 @@ func (h *HardwareInfo) getGPUInfo() {
 			break
 		}
 	}
-
-	// make a list of strings to hold the information
-	var gpuInfoList []string
-	gpuInfoList = strings.Split(gpuInfo, "\n")
-
-	// loop through the list of strings
-	// and get the information
-	for i := 0; i < len(gpuInfoList); i++ {
-
+	// now isolate the GPU info using the specified domian at the beginning of the string
+	var gpuEntry string = strings.Split(strings.ToLower(gpuInfo), "vga compatible controller:")[0]
+	// now run lspci -vs gpuEntry | grep -i -E "size|ram|memory|prefetchable" to get the VRAM info
+	gpuInfo, err = exec.Command("lspci", "-vs", gpuEntry).Output()
+	if err != nil {
+		// write to the err file
+		// then return
+		log.Fatalf("%s could not scry lspci: %s", daemonName, err.Error())
+		return
 	}
+	gpuInfoScan := bufio.NewScanner(bytes.NewReader(gpuInfo))
+	//
+	*/
 }
 
 func (config *Config) GetColor(color string) string {

@@ -72,10 +72,10 @@ echo "It controlls the look and feel and colorscheme";
 
 # Check that the user is root
 {
-    [ "$EUID" -ne 0 ] && 
-    sudo pacman -S --noconfirm "$PACKAGES" || 
+    [ "$EUID" -ne 0 ] &&
+    sudo pacman -S --noconfirm "$PACKAGES" ||
     pacman -S --noconfirm "$PACKAGES"
-} 2>&1 
+} 2>&1
 pid=$!;
 check_pid "$pid";
 
@@ -89,7 +89,7 @@ fi
 
 # Install YAY to continue with the installation
 # if the following script does not work,
-# then run check the output 
+# then run check the output
 
 
 # Ask user if they want to install YAY
@@ -195,7 +195,7 @@ esac & pid=$! || {
     # hold its pid and put it into check_pid function
     pid=$!;
     check_pid "$pid";
-} 
+}
 
 # FIXME: enable services
 
