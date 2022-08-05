@@ -61,7 +61,7 @@ echo "before you can use it, you need to have a working internet connection";
 echo "and a working installation drive that base Arch Linux is installed on.";
 echo "This script will also install some packages that are not included in the base Arch Linux";
 
-PACKAGES="go rust node-js python3 qtile git firefox thundebird obs-studio xorg steam gimp blender amd-ucode"
+PACKAGES="go rust node-js python3 git firefox thundebird obs-studio xorg steam gimp blender amd-ucode"
 AURPACKAGES="rocm-hip-runtime hip-runtime-amd rocm-opencl-runtime vs-code spotify ulauncher xlockmore cava wired"
 OTHERS="nvim vim-plug and neovim plugins that I enjoy"
 
@@ -73,8 +73,8 @@ echo "It controlls the look and feel and colorscheme";
 # Check that the user is root
 {
     [ "$EUID" -ne 0 ] &&
-    sudo pacman -S --noconfirm "$PACKAGES" ||
-    pacman -S --noconfirm "$PACKAGES"
+    sudo pacman -S --noconfirm $PACKAGES ||
+    pacman -S --noconfirm $PACKAGES
 } 2>&1
 pid=$!;
 check_pid "$pid";
