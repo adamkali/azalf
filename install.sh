@@ -17,26 +17,23 @@ load[13]="<____________/\___>"
 load[14]="<_____________/\__>"
 load[15]="<______________/\_>"
 load[16]="<_______________/\>"
-load[17]="<________________/\>"
-load[18]="<_________________/>"
-load[19]="<________________/\>"
-load[20]="<_______________/\_>"
-load[21]="<______________/\__>"
-load[22]="<_____________/\___>"
-load[23]="<____________/\____>"
-load[24]="<___________/\_____>"
-load[25]="<__________/\______>"
-load[26]="<_________/\_______>"
-load[27]="<________/\_________>"
-load[28]="<_______/\__________>"
-load[29]="<______/\___________>"
-load[30]="<_____/\____________>"
-load[31]="<____/\_____________>"
-load[32]="<___/\______________>"
-load[33]="<__/\_______________>"
-load[34]="<_/\________________>"
-load[36]="</\_________________>"
-
+load[17]="<________________/>"
+load[18]="<_______________/\>"
+load[19]="<______________/\_>"
+load[20]="<_____________/\__>"
+load[21]="<____________/\___>"
+load[22]="<___________/\____>"
+load[23]="<__________/\_____>"
+load[24]="<_________/\______>"
+load[25]="<________/\_______>"
+load[26]="<_______/\________>"
+load[27]="<______/\_________>"
+load[28]="<_____/\__________>"
+load[29]="<____/\___________>"
+load[30]="<___/\____________>"
+load[31]="<__/\_____________>"
+load[32]="<_/\______________>"
+load[33]="</\_______________>"
 
 # make a function that takes a pid as a parameter then checks if it is running
 # while it is running, it will print the load and loop through the array
@@ -55,7 +52,6 @@ function check_pid () {
 
 echo "Welcom to the installation script";
 # make a multiline echo
-echo -e "C\n(\.   \      ,/)\n  \(   |\     )/\n  //\  | \   /\\\n (/ /\_#oo#_/\ \)\n  \/\  ####  /\/\n       '##'";
 echo "This script will install Adam's Zillenial Arch Linux Flavor";
 echo "before you can use it, you need to have a working internet connection";
 echo "and a working installation drive that base Arch Linux is installed on.";
@@ -73,8 +69,8 @@ echo "It controlls the look and feel and colorscheme";
 # Check that the user is root
 {
     [ "$EUID" -ne 0 ] &&
-    sudo pacman -S --noconfirm $PACKAGES ||
-    pacman -S --noconfirm $PACKAGES
+    sudo pacman -S --noconfirm go rust node-js python3 git firefox thundebird obs-studio xorg steam gimp blender amd-ucode ||
+    pacman -S --noconfirm go rust node-js python3 git firefox thundebird obs-studio xorg steam gimp blender amd-ucode
 } 2>&1
 pid=$!;
 check_pid "$pid";
@@ -121,7 +117,7 @@ esac && {
     read -r answer;
     case $answer in
         [Yy]* )
-            yay -S --noconfirm "$AURPACKAGES";
+            yay -S --noconfirm rocm-hip-runtime hip-runtime-amd rocm-opencl-runtime vs-code spotify ulauncher xlockmore cava wired;
             ;;
         [Nn]* )
             echo "You chose not to install the azalf's AUR packages.";
@@ -143,8 +139,8 @@ esac && {
 
 # Install eww
 
-echo "Next we will install eww; it's written in rust."
-echo "Do you want to install eww? (y/n) (You must install this to use azalf's configs)"
+echo "Next we will install eww; its written in rust."
+echo "Do you want to install eww? \(y/n\) \(You must install this to use azalfs configs\)"
 read -r answer
 case $answer in
     [Yy]* )
@@ -195,8 +191,4 @@ esac & pid=$! || {
     # hold its pid and put it into check_pid function
     pid=$!;
     check_pid "$pid";
-}
-
-# FIXME: enable services
-
-# FIXME: add configs
+};
