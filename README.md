@@ -31,6 +31,8 @@ Any Tiling Window Manager Chad knows that the Keybindings of their TWM is everyt
 
 Just like the title of this section says this needs to do everything in an Arch Linux install. This will be figuring out how to get to the end of the Arch Linux Install Wiki.
 
+Will generate in the virtual machine. 
+
 ## 2. Packages That Are Essential
 
 [Back to Toc](#table-of-contents)
@@ -138,6 +140,8 @@ I want the ability to launch something from whatever workspace I am in. And thes
 
 #### 3.1.7 Email
 ❌
+
+thunderbird
 
 This is going to be a tough one to get settled on. I despise almost every email client I have ever seen. Yes, even Luke Smith's Neomutt.
 I do not want to spend hours trying to figure out everything and then come back the next day and see that my hardwork is broken. I f I have too I will put on the infinity gauntlet and do it myself. The other end of the spectrum so many Email apications just look bad, or just forget that I just want to check emails. If flair comes at the price of functionality, then you have made a terrible application.

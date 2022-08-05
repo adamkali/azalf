@@ -1,5 +1,58 @@
 #!/bin/bash
 
+load[0]="<\________________>"
+load[1]="</\_______________>"
+load[2]="<_/\______________>"
+load[3]="<__/\_____________>"
+load[4]="<___/\____________>"
+load[5]="<____/\___________>"
+load[6]="<_____/\__________>"
+load[7]="<______/\_________>"
+load[8]="<_______/\________>"
+load[9]="<________/\_______>"
+load[10]="<_________/\______>"
+load[11]="<__________/\_____>"
+load[12]="<___________/\____>"
+load[13]="<____________/\___>"
+load[14]="<_____________/\__>"
+load[15]="<______________/\_>"
+load[16]="<_______________/\>"
+load[17]="<________________/\>"
+load[18]="<_________________/>"
+load[19]="<________________/\>"
+load[20]="<_______________/\_>"
+load[21]="<______________/\__>"
+load[22]="<_____________/\___>"
+load[23]="<____________/\____>"
+load[24]="<___________/\_____>"
+load[25]="<__________/\______>"
+load[26]="<_________/\_______>"
+load[27]="<________/\_________>"
+load[28]="<_______/\__________>"
+load[29]="<______/\___________>"
+load[30]="<_____/\____________>"
+load[31]="<____/\_____________>"
+load[32]="<___/\______________>"
+load[33]="<__/\_______________>"
+load[34]="<_/\________________>"
+load[36]="</\_________________>"
+
+
+# make a function that takes a pid as a parameter then checks if it is running
+# while it is running, it will print the load and loop through the array
+function check_pid () {
+    # make a variable to hold the pid
+    local pid=$1
+    # make a whileloop that will run until the pid is killed
+    while [ -d /proc/"$pid" ]; do
+        for i in {0..36}; do
+            echo -ne "${load[$i]}\r"
+            sleep 0.1
+        done
+    done
+}
+
+
 echo "Welcom to the installation script";
 # make a multiline echo
 echo -e "C\n(\.   \      ,/)\n  \(   |\     )/\n  //\  | \   /\\\n (/ /\_#oo#_/\ \)\n  \/\  ####  /\/\n       '##'";
@@ -18,8 +71,14 @@ echo "This script will also add a .look.yml file to ~/.config.";
 echo "It controlls the look and feel and colorscheme";
 
 # Check that the user is root
-[ "$EUID" -ne 0 ] && sudo pacman -S --noconfirm "$PACKAGES" || pacman -S --noconfirm "$PACKAGES"
- 
+{
+    [ "$EUID" -ne 0 ] && 
+    sudo pacman -S --noconfirm "$PACKAGES" || 
+    pacman -S --noconfirm "$PACKAGES"
+} 2>&1 
+pid=$!;
+check_pid "$pid";
+
 # check if there were errors
 if [ $? -ne 0 ]; then
     echo "An error has when installing azalf's packages."
@@ -53,6 +112,10 @@ case $answer in
         echo "Please answer yes or no."
         ;;
 esac && {
+    # hold its pid and put it into check_pid function
+    pid=$!;
+    check_pid "$pid";
+} && {
     echo "The following packages will be installed: $AURPACKAGES";
     echo "do you want to install them? (y/n)";
     read -r answer;
@@ -68,9 +131,18 @@ esac && {
             echo "Please answer yes or no.";
             ;;
     esac;
+} && {
+    pid=$!;
+    check_pid "$pid";
+} || {
+    # if there was an error, print it
+    echo "An error has occurred."
+    echo "Please ensure that you have an internet connection."
+    echo " Run $ yay -S --noconfirm $AURPACKAGES"
 }
 
 # Install eww
+
 echo "Next we will install eww; it's written in rust."
 echo "Do you want to install eww? (y/n) (You must install this to use azalf's configs)"
 read -r answer
@@ -92,16 +164,20 @@ esac || {
     echo "Please ensure that you have an internet connection.";
     echo "You are free to run the script again.";
     exit 1;
+} && {
+    # hold its pid and put it into check_pid function
+    pid=$!;
+    check_pid "$pid";
 }
 
 echo "One last thing before we continue...";
 echo "Neovim is going to be installed alongside vim-plug.";
-echo "Do you want to install neovim? (y/n)";
+echo "Do you want to install neovim and its components? (y/n)";
 read -r answer;
 case $answer in
     [Yy]* )
         pip install neovim
-        https://github.com/vim-scripts/vim-plug.git
+        git clone https://github.com/vim-scripts/vim-plug.git
         ;;
     [Nn]* )
         echo "You chose not to install neovim.";
@@ -110,10 +186,17 @@ case $answer in
     * )
         echo "Please answer yes or no.";
         ;;
-esac || {
-    echo "An error has occurred when installing neovim.";
+esac & pid=$! || {
+    echo "An error has occurred when installing neovim and its components.";
     echo "Please ensure that you have an internet connection.";
     echo "You are free to run the script again.";
     exit 1;
-}
+} && {
+    # hold its pid and put it into check_pid function
+    pid=$!;
+    check_pid "$pid";
+} 
 
+# FIXME: enable services
+
+# FIXME: add configs

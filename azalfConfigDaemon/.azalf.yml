@@ -1,0 +1,38 @@
+config:
+	colors:
+		background: "#011C27"
+		foreground: "#EDF7F6"
+		important: "#00B2CA"
+		active: "#F06C9B"
+		primary: "#6665DD"
+		secondary: "#7765E3"
+		highlight: "#C8ADC0"
+		highlight-secondary: "#8EE3EF"
+		widget-background: "#55116A"
+		widget-foreground: "#AB81CD"
+		widget-warn: "#A4036F"
+		widget-danger: "#F40076"
+		info: "#A42CD6"
+		success: "#00A6ED"
+		shell-background: "#E952DE"
+		shell-background-alt: "#FFA0FD"
+		shell-info: "#FFE1EA"
+		other: "#171738"
+		shell-dark: "2E1760"
+	font-families:
+		monospace: "VictorMono Nerd Font Mono"
+		sans-serif: "ttf-liberation-sans"
+		serif: "ttf-liberation-serif"
+		emoji: "joypixels"
+	sizing:
+		font-sizes:
+			shell: 12
+			shell-large: 16
+			normal: 14
+			bar: 13
+			dashboard: 18
+			dashboard-large: 24
+		padding:
+			x: 10
+			y: 8
+		border-radius: 10
