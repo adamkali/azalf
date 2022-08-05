@@ -69,8 +69,8 @@ echo "It controlls the look and feel and colorscheme";
 # Check that the user is root
 {
     [ "$EUID" -ne 0 ] &&
-    sudo pacman -S --noconfirm go rust node-js python3 git firefox thundebird obs-studio xorg steam gimp blender amd-ucode ||
-    pacman -S --noconfirm go rust node-js python3 git firefox thundebird obs-studio xorg steam gimp blender amd-ucode
+    sudo pacman -S --noconfirm go node-js python3 git firefox thundebird obs-studio steam gimp blender amd-ucode ||
+    pacman -S --noconfirm go node-js python3 git firefox thundebird obs-studio steam gimp blender amd-ucode
 } 2>&1
 pid=$!;
 check_pid "$pid";
@@ -117,7 +117,7 @@ esac && {
     read -r answer;
     case $answer in
         [Yy]* )
-            yay -S --noconfirm rocm-hip-runtime hip-runtime-amd rocm-opencl-runtime vs-code spotify ulauncher xlockmore cava wired;
+            yay -S --noconfirm rustup rocm-hip-runtime hip-runtime-amd rocm-opencl-runtime vs-code spotify ulauncher xlockmore cava wired;
             ;;
         [Nn]* )
             echo "You chose not to install the azalf's AUR packages.";
