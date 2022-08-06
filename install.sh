@@ -69,11 +69,9 @@ echo "It controlls the look and feel and colorscheme";
 # Check that the user is root
 {
     [ "$EUID" -ne 0 ] &&
-    sudo pacman -S --noconfirm go node-js python3 git firefox thundebird obs-studio steam gimp blender amd-ucode ||
-    pacman -S --noconfirm go node-js python3 git firefox thundebird obs-studio steam gimp blender amd-ucode
+    sudo pacman -S --noconfirm go node-js python3 git firefox thunderbird obs-studio steam gimp blender amd-ucode ||
+    pacman -S --noconfirm go node-js python3 git firefox thunderbird obs-studio steam gimp blender amd-ucode
 } 2>&1
-pid=$!;
-check_pid "$pid";
 
 # check if there were errors
 if [ $? -ne 0 ]; then
@@ -127,9 +125,6 @@ esac && {
             echo "Please answer yes or no.";
             ;;
     esac;
-} && {
-    pid=$!;
-    check_pid "$pid";
 } || {
     # if there was an error, print it
     echo "An error has occurred."
@@ -160,10 +155,6 @@ esac || {
     echo "Please ensure that you have an internet connection.";
     echo "You are free to run the script again.";
     exit 1;
-} && {
-    # hold its pid and put it into check_pid function
-    pid=$!;
-    check_pid "$pid";
 }
 
 echo "One last thing before we continue...";
@@ -187,8 +178,4 @@ esac & pid=$! || {
     echo "Please ensure that you have an internet connection.";
     echo "You are free to run the script again.";
     exit 1;
-} && {
-    # hold its pid and put it into check_pid function
-    pid=$!;
-    check_pid "$pid";
 };
