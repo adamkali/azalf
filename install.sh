@@ -69,8 +69,8 @@ echo "It controlls the look and feel and colorscheme";
 # Check that the user is root
 {
     [ "$EUID" -ne 0 ] &&
-    sudo pacman -S --noconfirm go node-js python3 git firefox thunderbird obs-studio steam gimp blender amd-ucode ||
-    pacman -S --noconfirm go node-js python3 git firefox thunderbird obs-studio steam gimp blender amd-ucode
+    sudo pacman -S --noconfirm go neovim nodejs python3 git firefox thunderbird obs-studio steam gimp blender amd-ucode ||
+    pacman -S --noconfirm go nodejs neovim python3 git firefox thunderbird obs-studio steam gimp blender amd-ucode
 } 2>&1
 
 # check if there were errors
@@ -106,10 +106,6 @@ case $answer in
         echo "Please answer yes or no."
         ;;
 esac && {
-    # hold its pid and put it into check_pid function
-    pid=$!;
-    check_pid "$pid";
-} && {
     echo "The following packages will be installed: $AURPACKAGES";
     echo "do you want to install them? (y/n)";
     read -r answer;
@@ -163,7 +159,6 @@ echo "Do you want to install neovim and its components? (y/n)";
 read -r answer;
 case $answer in
     [Yy]* )
-        pip install neovim
         git clone https://github.com/vim-scripts/vim-plug.git
         ;;
     [Nn]* )

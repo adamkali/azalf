@@ -79,17 +79,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/sevlyar/go-daemon"
+	"github.com/takama/daemon"
 )
 
 var (
@@ -100,6 +100,7 @@ var (
 	daemonLog  = "/var/log/azalfConfigDaemon.log"
 	daemonPwd  = "/var/run/azalfConfigDaemon.pwd"
 	daemonHar  = "/var/run/azalfConfigDaemon/hardware.json"
+	daemonPort = ":9999"
 
 	signal = flag.String("s", "", `Send signal to the daemon:
 	quit — graceful shutdown
@@ -107,10 +108,12 @@ var (
 	reload — reloading the configuration file`)
 )
 
-var (
-	stop = make(chan struct{})
-	done = make(chan struct{})
-)
+var dependencies = []strinng{"azalf.service"}
+var stdlog, errlog *log.Logger
+
+type Service struct {
+	daemon.Daemon
+}
 
 type Config struct {
 	Colors struct {
@@ -210,44 +213,42 @@ type CPUUsageTunnel struct {
 	Total int `json:"total"`
 }
 
-func main() {
-
-	flag.Parse()
-	daemon.AddCommand(daemon.StringFlag(signal, "quit"), syscall.SIGQUIT, termHandler)
-	daemon.AddCommand(daemon.StringFlag(signal, "stop"), syscall.SIGTERM, termHandler)
-	daemon.AddCommand(daemon.StringFlag(signal, "reload"), syscall.SIGHUP, reloadHandler)
-
-	context :=
-		&daemon.Context{
-			PidFileName: daemonPid,
-			PidFilePerm: 0644,
-			LogFileName: daemonLog,
-			LogFilePerm: 0640,
-			WorkDir:     "/var/run/azalfConfigDaemon",
-			Umask:       027,
-			Args:        []string{"azalfConfigDaemon"},
+func (s *Service) Manage() (string, error) {
+	usage := "Usage: azalfConfigDaemon [-s <signal>]\n Available signals:\n  install | remove | start | stop | status"
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "install":
+			return s.Install()
+		case "remove":
+			return s.Remove()
+		case "start":
+			return s.Start()
+		case "stop":
+			return s.Stop()
+		case "status":
+			return s.Status()
+		default:
+			return usage, nil
 		}
-
-	if len(daemon.ActiveFlags()) > 0 {
-		d, err := context.Search()
-		if err != nil {
-			log.Fatalf("Unable send signal to the daemon: ", err)
-		}
-		daemon.SendCommands(d)
-		return
 	}
 
-	d, err := context.Reborn()
+	// Set up channel on which to send signal notifications.
+	// We must use a buffered channel or risk missing the signal
+	// if we're not ready to receive when the signal is sent.
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
+
+	// Set up listener for defined host and port
+	listener, err := net.Listen("tcp", daemonPort)
 	if err != nil {
-		log.Fatalf("Unable to run: ", err)
+		return "Possible problem with port binding", err
 	}
-	if d != nil {
-		return
-	}
-	defer context.Release()
 
-	log.Printf("%s has started brewing spells", daemonName)
-	log.Printf("%s is now casting spells!", daemonDesc)
+	// set ip channel on which to sed accepted connections
+	acceptChan := make(chan net.Conn, 100)
+	go func() {
+		acceptConnection(listener, listen)
+	}()
 
 	//
 	// get the .azalf.yml file
@@ -267,6 +268,45 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
+	// loop waiting for signal or for new connection
+	for {
+		select {
+		case conn := <-listener:
+			go func() {
+				serveHTTP(config)
+			}()
+		case sig := <-interrupt:
+			stdlog.Fprintf("%s was given the %s spell to cast \n casting: %s", daemonName, sig, sig)
+			stdlog.Fprintf("%s stopped scrying on %s", daemonName, listener.Addr())
+			listener.Close()
+			if sig == os.Interrupt {
+				return fmt.Sprintf("%s was interupted by system signal"), nil
+			}
+			return fmt.Sprintf("%s was killed by system signal"), nil
+		}
+	}
+
+	return usage, nil
+
+}
+
+func acceptConnection(listener net.listener, listen chan<- net.Conn) {
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			continue
+		}
+		listen <- conn
+	}
+}
+
+func init() {
+	stdlog = log.New(daemonLog, "", log.Ldate|log.Ltime)
+	errlog = log.New(os.Stderr, "", log.Ldate|log.Ltime)
+}
+
+func main() {
+
 	// TODO: Later in Arch Linux proper.
 	// create hardware info to be written to
 	// /var/run/azalfConfigDaemon/hardware.json
@@ -276,66 +316,19 @@ func main() {
 	//hardwareInfo := HardwareInfo{}
 	//go hardwareListener(&hardwareInfo)
 
-	go worker(&config)
-
-	// make an anonymous go routine to listen for server requests
-
-	// wg := sync.WaitGroup{}
-	// wg.Add(1) // one for now
-	// go func() {
-	// 	defer wg.Done()
-	// 	worker()
-	// }()
-	// wg.Wait()
-
-	err = daemon.ServeSignals()
+	srv, err := daemon.New(daemonName, daemonDesc, daemon.SystemDaemon, dependencies...)
 	if err != nil {
-		log.Printf("AZALF's spells blew up in his face: ", err)
+		errlog.Fatal(err)
+		os.Exit(1)
 	}
-
-	log.Printf("%s has gone to sleep.", daemonName)
-
-}
-
-func worker(c *Config) {
-	for {
-		// This will be where the server is started
-		// and the server is listening for requests
-		// and then the server is closed if the daemon
-		// is stopped or if the daemon is killed
-		//
-		// The server is started here
-		// the server will be listening on localhost:9999
-		serveHTTP(c)
-
-		select {
-		case <-stop:
-			done <- struct{}{}
-			return
-		case <-time.After(time.Second):
-			log.Printf("%s is still alive and brewing your config.", daemonName)
-		}
+	service := &Service{srv}
+	status, err := service.Manage()
+	if err != nil {
+		errlog.Println(status, "\nError: ", err)
+		os.Exit(1)
 	}
-}
+	fmt.Println(status)
 
-func hardwareListener(h *HardwareInfo) {
-	for {
-		// This will be where the Daemon listens to the hardware
-		// then it will write the hardware info to the HardwareInfo struct
-		// which can be accessed by the server
-		// then the user can make calls to th server localy and get the
-		// hardware info that they want.
-		//
-		time.Sleep(time.Second / 2)
-
-		select {
-		case <-stop:
-			done <- struct{}{}
-			return
-		case <-time.After(time.Second):
-			log.Printf("%s is monotoring the magic.", daemonName)
-		}
-	}
 }
 
 // TODO: Finish this
@@ -836,21 +829,5 @@ func (config *Config) getConfigSpecificSizing(w http.ResponseWriter, r *http.Req
 
 func serveHTTP(config *Config) {
 	http.HandleFunc("/config", config.AzalfHandler)
-	http.ListenAndServe("127.0.0.1:9999", nil)
-}
-
-func termHandler(sig os.Signal) error {
-	log.Println(
-		"%s shall be terminated. Hasta La Vista... %s", daemonName, daemonName,
-	)
-	stop <- struct{}{}
-	if sig == syscall.SIGQUIT {
-		<-done
-	}
-	return daemon.ErrStop
-}
-
-func reloadHandler(sig os.Signal) error {
-	log.Printf("%s fell asleep", daemonName)
-	return nil
+	http.ListenAndServe(fmt.Sprintf("127.0.0.1:%s", daemonPort), nil)
 }

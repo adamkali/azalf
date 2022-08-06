@@ -21,5 +21,20 @@ Plug 'raimon49/requirements.txt.vim', {'for': 'requirements.txt'}
 
 call plug#end()
 
-filetype plugin indent on
+-- make an http request to the server to get the config colorscheme --
+local https = require('ssl.https')
+local response, code, headers, status = http.request{
+  url = 'http://localhost:9999/config/colors',
+  method = 'GET',
+  headers = {
+    ['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36'
+  }
+}
+
+local colors = {}
+
+-- require json to decode the response --
+local json = require('json')
+colors = json.decode(response)
+
 
