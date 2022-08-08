@@ -75,13 +75,13 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
 	"strconv"
 	"strings"
@@ -101,14 +101,9 @@ var (
 	daemonPwd  = "/var/run/azalfConfigDaemon.pwd"
 	daemonHar  = "/var/run/azalfConfigDaemon/hardware.json"
 	daemonPort = ":9999"
-
-	signal = flag.String("s", "", `Send signal to the daemon:
-	quit — graceful shutdown
-	stop — fast shutdown
-	reload — reloading the configuration file`)
 )
 
-var dependencies = []strinng{"azalf.service"}
+var dependencies = []string{"azalf.service"}
 var stdlog, errlog *log.Logger
 
 type Service struct {
@@ -247,7 +242,7 @@ func (s *Service) Manage() (string, error) {
 	// set ip channel on which to sed accepted connections
 	acceptChan := make(chan net.Conn, 100)
 	go func() {
-		acceptConnection(listener, listen)
+		acceptConnection(listener, acceptChan)
 	}()
 
 	//
@@ -259,7 +254,7 @@ func (s *Service) Manage() (string, error) {
 	// and then depending on the request, it could
 	//
 	var config Config
-	conf, err := ioutil.ReadFile("~/.azalf.yml")
+	conf, err := ioutil.ReadFile("/home/adam/.config/azalf/.azalf.yml")
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -271,13 +266,13 @@ func (s *Service) Manage() (string, error) {
 	// loop waiting for signal or for new connection
 	for {
 		select {
-		case conn := <-listener:
+		case conn := <-acceptChan:
 			go func() {
-				serveHTTP(config)
+				serve(&config, conn)
 			}()
 		case sig := <-interrupt:
-			stdlog.Fprintf("%s was given the %s spell to cast \n casting: %s", daemonName, sig, sig)
-			stdlog.Fprintf("%s stopped scrying on %s", daemonName, listener.Addr())
+			stdlog.Printf("%s was given the %s spell to cast \n casting: %s", daemonName, sig, sig)
+			stdlog.Printf("%s stopped scrying on %s", daemonName, listener.Addr())
 			listener.Close()
 			if sig == os.Interrupt {
 				return fmt.Sprintf("%s was interupted by system signal"), nil
@@ -290,7 +285,7 @@ func (s *Service) Manage() (string, error) {
 
 }
 
-func acceptConnection(listener net.listener, listen chan<- net.Conn) {
+func acceptConnection(listener net.Listener, listen chan<- net.Conn) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -300,8 +295,20 @@ func acceptConnection(listener net.listener, listen chan<- net.Conn) {
 	}
 }
 
+func serve(config *Config, client net.Conn) {
+	for {
+		buf := make([]byte, 4096)
+		numbytes, err := client.Read(buf)
+		if numbytes ==0 || err !=nil {
+			return
+		}
+		client.Write(buf[:numbytes])
+		serveHTTP(config)
+	}
+}
+
 func init() {
-	stdlog = log.New(daemonLog, "", log.Ldate|log.Ltime)
+	stdlog = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 	errlog = log.New(os.Stderr, "", log.Ldate|log.Ltime)
 }
 
