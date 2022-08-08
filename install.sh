@@ -111,7 +111,7 @@ esac && {
     read -r answer;
     case $answer in
         [Yy]* )
-            yay -S --noconfirm rustup rocm-hip-runtime hip-runtime-amd rocm-opencl-runtime vs-code spotify ulauncher xlockmore cava wired;
+            yay -S --noconfirm rustup rocm-hip-runtime hip-runtime-amd rocm-opencl-runtime vs-code spotify ulauncher xlockmore cava wired picom-jonaburg-git;
             ;;
         [Nn]* )
             echo "You chose not to install the azalf's AUR packages.";

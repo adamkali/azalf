@@ -2,13 +2,13 @@ package main
 
 /*
 
- ▄▀▀█▄   ▄▀▀▀▀▄    ▄▀▀█▄   ▄▀▀▀▀▄     ▄▀▀▀█▄        ▄▀▀█▄▄   ▄▀▀█▄   ▄▀▀█▄▄▄▄  ▄▀▀▄ ▄▀▄  ▄▀▀▀▀▄   ▄▀▀▄ ▀▄
-▐ ▄▀ ▀▄ █     ▄▀  ▐ ▄▀ ▀▄ █    █     █  ▄▀  ▀▄     █ ▄▀   █ ▐ ▄▀ ▀▄ ▐  ▄▀   ▐ █  █ ▀  █ █      █ █  █ █ █
-  █▄▄▄█ ▐ ▄▄▀▀      █▄▄▄█ ▐    █     ▐ █▄▄▄▄       ▐ █    █   █▄▄▄█   █▄▄▄▄▄  ▐  █    █ █      █ ▐  █  ▀█
- ▄▀   █   █        ▄▀   █     █       █    ▐         █    █  ▄▀   █   █    ▌    █    █  ▀▄    ▄▀   █   █
-█   ▄▀     ▀▄▄▄▄▀ █   ▄▀    ▄▀▄▄▄▄▄▄▀ █             ▄▀▄▄▄▄▀ █   ▄▀   ▄▀▄▄▄▄   ▄▀   ▄▀     ▀▀▀▀   ▄▀   █
-▐   ▐          ▐  ▐   ▐     █        █             █     ▐  ▐   ▐    █    ▐   █    █             █    ▐
-                            ▐        ▐             ▐                 ▐        ▐    ▐             ▐
+ ▄▀▀█▄   ▄▀▀▀▀▄    ▄▀▀█▄   ▄▀▀▀▀▄     ▄▀▀▀█▄        ▄▀▀▀▀▄  ▄▀▀█▄▄▄▄  ▄▀▀▄▀▀▀▄  ▄▀▀▄ ▄▀▀▄  ▄▀▀█▄▄▄▄  ▄▀▀▄▀▀▀▄
+▐ ▄▀ ▀▄ █     ▄▀  ▐ ▄▀ ▀▄ █    █     █  ▄▀  ▀▄     █ █   ▐ ▐  ▄▀   ▐ █   █   █ █   █    █ ▐  ▄▀   ▐ █   █   █
+  █▄▄▄█ ▐ ▄▄▀▀      █▄▄▄█ ▐    █     ▐ █▄▄▄▄          ▀▄     █▄▄▄▄▄  ▐  █▀▀█▀  ▐  █    █    █▄▄▄▄▄  ▐  █▀▀█▀
+ ▄▀   █   █        ▄▀   █     █       █    ▐       ▀▄   █    █    ▌   ▄▀    █     █   ▄▀    █    ▌   ▄▀    █
+█   ▄▀     ▀▄▄▄▄▀ █   ▄▀    ▄▀▄▄▄▄▄▄▀ █             █▀▀▀    ▄▀▄▄▄▄   █     █       ▀▄▀     ▄▀▄▄▄▄   █     █
+▐   ▐          ▐  ▐   ▐     █        █              ▐       █    ▐   ▐     ▐               █    ▐   ▐     ▐
+                            ▐        ▐                      ▐                              ▐
 
 
                                   ....
@@ -46,26 +46,22 @@ package main
 */
 
 /*
-	A few notes about the daemon:
-	- This is a simple daemon that will be used to monitor the hardware
+	A few notes about the server:
+	- This is a simple server that will be used to monitor the hardware
 		and serve the config to many programs within the machine.
 	- This is configurable through the ~/.config/azalf/.azalf.yaml file
 		You can change the config file to your liking, primarly through
 		html color codes. The config file also holds sizing information
 		for any sizing elements.
 	- In this way I want to be able to create a simple homogeneous design
-		for the look and feel of the daemon.
+		for the my operating system.
 		for the time being I only have the config server in a state that
 		I feel is good enough for production, but that is mosty because
-		of the gpu. :/
-	- However, once I get into Arch Proper, then I will go back and finish the
-		daemon and serve system information.
-	- The daemon really just needs to be started and enabled by the usual
-		systemd way of starting the daemon.
-		- sudo systemctl start azalf.service
-		- sudo systemctl enable azalf.service
+		of the gettting gpu information. :/
 	- Then the you can simple do a http://localhost:9999/config request to get
 		the config file in your configurable application's request method.
+	- You can also tell the server to refresh the config file by doing a
+		azalf update command.
 
 	Happy hacking!
 
@@ -78,37 +74,21 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"os"
-	"os/signal"
 	"runtime"
 	"strconv"
 	"strings"
-	"syscall"
 
 	"gopkg.in/yaml.v3"
-
-	"github.com/takama/daemon"
 )
 
 var (
-	daemonName = "AZALF"
-	daemonDesc = "Adam's Zillenial Arch Linux Flavor Daemon"
-	daemonUser = "root"
-	daemonPid  = "/var/run/azalfConfigDaemon.pid"
-	daemonLog  = "/var/log/azalfConfigDaemon.log"
-	daemonPwd  = "/var/run/azalfConfigDaemon.pwd"
-	daemonHar  = "/var/run/azalfConfigDaemon/hardware.json"
-	daemonPort = ":9999"
+	serverName = "AZALF"
+	serverDesc = "Adam's Zillenial Arch Linux Flavor Server"
+	serverPort = ":9999"
+	serverVers = "0.2.4"
 )
-
-var dependencies = []string{"azalf.service"}
-var stdlog, errlog *log.Logger
-
-type Service struct {
-	daemon.Daemon
-}
 
 type Config struct {
 	Colors struct {
@@ -208,134 +188,193 @@ type CPUUsageTunnel struct {
 	Total int `json:"total"`
 }
 
-func (s *Service) Manage() (string, error) {
-	usage := "Usage: azalfConfigDaemon [-s <signal>]\n Available signals:\n  install | remove | start | stop | status"
-	if len(os.Args) > 1 {
-		switch os.Args[1] {
-		case "install":
-			return s.Install()
-		case "remove":
-			return s.Remove()
-		case "start":
-			return s.Start()
-		case "stop":
-			return s.Stop()
-		case "status":
-			return s.Status()
-		default:
-			return usage, nil
+func main() {
+	// Make a log file for the server.
+	logFile, err := os.Create("azalf.log")
+	if err != nil {
+		log.Fatal("Failed to create log file.")
+	}
+
+	// Check that the user is root and on linux
+	if runtime.GOOS != "linux" {
+		log.Fatalf("%s can only do his magic on linux", serverName)
+	}
+
+	// Loop until the user calls `azalf stop`
+	for {
+		// Initialize the config
+		var conf Config
+
+		// The server should be accept args to update the config file, even while running.
+		// Allow the user to call the program with an argument to update the config
+		// file while the program is running.
+		if len(os.Args) > 1 {
+			// Make a --help command to show the user how to use the program.
+			if os.Args[1] == "--help" || os.Args[1] == "-h" {
+				fmt.Printf("%s %s\n", serverName, serverVers)
+				fmt.Printf("%s\n", serverDesc)
+				fmt.Println("")
+				// Print the ascii art to the user.
+				fmt.Println(`
+                                  ....
+                                .'' .'''
+.                             .'   :
+\\                          .:    :
+ \\                        _:    :       ..----.._
+  \\                    .:::.....:::.. .'         ''.
+   \\                 .'  #-. .-######'     #        '.
+    \\                 '.##'/ ' ################       :
+     \\                  #####################         :
+      \\               ..##.-.#### .''''###'.._        :
+       \\             :--:########:            '.    .' :
+        \\..__...--.. :--:#######.'   '.         '.     :
+        :     :  : : '':'-:'':'::        .         '.  .'
+        '---'''..: :    ':    '..'''.      '.        :'
+           \\  :: : :     '      ''''''.     '.      .:
+            \\ ::  : :     '            '.      '      :
+             \\::   : :           ....' ..:       '     '.
+              \\::  : :    .....####\\ .~~.:.             :
+               \\':.:.:.:'#########.===. ~ |.'-.   . '''.. :
+                \\    .'  ########## \ \ _.' '. '-.       '''.
+                :\\  :     ########   \ \      '.  '-.        :
+               :  \\'    '   #### :    \ \      :.    '-.      :
+              :  .'\\   :'  :     :     \ \       :      '-.    :
+             : .'  .\\  '  :      :     :\ \       :        '.   :
+             ::   :  \\'  :.      :     : \ \      :          '. :
+             ::. :    \\  : :      :    ;  \ \     :           '.:
+              : ':    '\\ :  :     :     :  \:\     :        ..'
+                 :    ' \\ :        :     ;  \|      :   .'''
+                 '.   '  \\:                         :.''
+                  .:..... \\:       :            ..''
+                 '._____|'.\\......'''''''.:..'''
+                            \\`)
+				fmt.Println("A few notes about the server:")
+				fmt.Println("- This is a simple server that will be used to monitor the hardware")
+				fmt.Println("  and serve the config to many programs within the machine.")
+				fmt.Println("- This is configurable through the ~/.config/azalf/.azalf.yaml file")
+				fmt.Println("  You can change the config file to your liking, primarly through")
+				fmt.Println("  html color codes. The config file also holds sizing information")
+				fmt.Println("  for any sizing elements.")
+				fmt.Println("- In this way I want to be able to create a simple homogeneous design")
+				fmt.Println("  for the my operating system. for the time being I only have the config")
+				fmt.Println("  server in a state that I feel is good enough for production, but that")
+				fmt.Println("  is mostly because of the getting gpu information. :/")
+				fmt.Println("- Then the you can simple do a http://localhost:9999/config request to get")
+				fmt.Println("  the config file in your configurable application's request method.")
+				fmt.Println("- You can also tell the server to refresh the config file by doing a")
+				fmt.Println("  azalf update command.")
+				fmt.Println("Happy hacking!")
+				fmt.Println("")
+				fmt.Println("Usage:")
+				fmt.Println("  azalf update")
+				fmt.Println("  azalf stop")
+				fmt.Println("  azalf spells")
+				fmt.Println("  azalf --help || -h")
+				fmt.Println("  azalf --version || -v")
+				fmt.Println("  azalf --liscense || -l")
+				fmt.Println("")
+				fmt.Println("Example Use of Server:")
+				fmt.Println("    command-line:  curl -X GET \\ \n-H 'Content-type: application/json' \\ \n-H 'Accept: application/json' \\ \nhttp://localhost:9999/config")
+				fmt.Println("")
+				fmt.Println("    python: requests.get('http://localhost:9999/config')")
+				fmt.Println("")
+				fmt.Println("    go:  http.Get('http://localhost:9999/config')")
+				fmt.Println("")
+				fmt.Println("    java: HttpClient.get('http://localhost:9999/config')")
+				fmt.Println("")
+				fmt.Println("    lua: http.get('http://localhost:9999/config')")
+				fmt.Println("")
+				fmt.Println("    etc.")
+				fmt.Println("")
+				fmt.Println("    Once the you get the json you asked for you can use the json to")
+				fmt.Println("    use in the application you want. For example Neovim, or Qtile.")
+				fmt.Println("")
+				fmt.Println("If you have any questions or comments, please email me at:")
+				fmt.Println("    adamkali@outlook.com")
+				fmt.Println("")
+				fmt.Println("If you wish to contribute to the project, please visit:")
+				fmt.Println("    github.com/adamkali/azalf")
+				fmt.Println("Then make a pull request!")
+				os.Exit(0)
+			}
+			if os.Args[1] == "update" {
+				// Update the config file.
+				conf, err = loadConfig(&conf)
+				if err != nil {
+					log.Fatal(err)
+					os.Exit(1)
+				}
+			}
+			if os.Args[1] == "stop" {
+				// Stop the server.
+				os.Exit(0)
+			}
+			if os.Args[1] == "spells" {
+				// print the endpoints.
+				fmt.Println("")
+				fmt.Println("Endpoints:")
+				fmt.Println("  http://localhost:9999/config")
+				fmt.Println("  http://localhost:9999/config/colors")
+				fmt.Println("  http://localhost:9999/config/sizes")
+				fmt.Println("  http://localhost:9999/config/fonts")
+				fmt.Println("  http://localhost:9999/config/colors/{color}")
+				fmt.Println("  http://localhost:9999/config/sizes/{size}")
+				fmt.Println("  http://localhost:9999/config/fonts/{font}")
+				fmt.Println("")
+				fmt.Println("Please see your config for available {color}, {size}, and {font}")
+				fmt.Println("   They will be the names of the colors, sizes, and fonts.")
+				fmt.Println("")
+
+			if os.Args[1] == "--version" || os.Args[1] == "-v" {
+				// Print the version.
+				fmt.Println(serverName + " " + serverVersion)
+			}
+			if os.Args[1] == "--license" || os.Args[1] == "-l" {
+				// Print GNU GPLv3 license.
+				fmt.Println(serverName + " " + serverVersion)
+				fmt.Println("")
+				fmt.Println("Copyright (C) 2022  Azalf")
+				fmt.Println("This program is free software: you can redistribute it and/or modify")
+				fmt.Println("it under the terms of the GNU General Public License as published by")
+				fmt.Println("the Free Software Foundation, either version 3 of the License, or")
+				fmt.Println("(at your option) any later version.")
+				fmt.Println("")
+				fmt.Println("This program is distributed in the hope that it will be useful,")
+				fmt.Println("but WITHOUT ANY WARRANTY; without even the implied warranty of")
+				fmt.Println("MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the")
+				fmt.Println("GNU General Public License for more details.")
+				fmt.Println("")
+		} else if len (os.Args) == 0 {
+			// If the program is called without an argument,
+			// load the config, and then start the server.
+			conf, err := loadConfig(&config)
+			serveHTTP(&conf)
+		} else {
+			fmt.Printf("%s did not recognize that spell. Please use the --help command", serverName)
+			os.Exit(1)
 		}
 	}
+}
 
-	// Set up channel on which to send signal notifications.
-	// We must use a buffered channel or risk missing the signal
-	// if we're not ready to receive when the signal is sent.
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
+func () loadConfig(config *Config) (Config, err) {
 
-	// Set up listener for defined host and port
-	listener, err := net.Listen("tcp", daemonPort)
+	// Get the current User's home directory
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "Possible problem with port binding", err
+		config = Config{}
+		return config, err
 	}
-
-	// set ip channel on which to sed accepted connections
-	acceptChan := make(chan net.Conn, 100)
-	go func() {
-		acceptConnection(listener, acceptChan)
-	}()
-
-	//
-	// get the .azalf.yml file
-	// the .azalf.yml file is going to hold
-	// the look and feel of the OS
-	//
-	// neovim could call this daemon by an http request
-	// and then depending on the request, it could
-	//
-	var config Config
-	conf, err := ioutil.ReadFile("/home/adam/.config/azalf/.azalf.yml")
+	conf, err := = ioutil.ReadFile(fmt.Sprintf("%s/.config/azalf/.azalf.yml", homeDir))
 	if err != nil {
-		log.Fatalf(err.Error())
+		config = Config{}
+		return config, err
 	}
 	err = yaml.Unmarshal(conf, &config)
 	if err != nil {
-		log.Fatalf(err.Error())
+		config = Config{}
+		return config, err
 	}
-
-	// loop waiting for signal or for new connection
-	for {
-		select {
-		case conn := <-acceptChan:
-			go func() {
-				serve(&config, conn)
-			}()
-		case sig := <-interrupt:
-			stdlog.Printf("%s was given the %s spell to cast \n casting: %s", daemonName, sig, sig)
-			stdlog.Printf("%s stopped scrying on %s", daemonName, listener.Addr())
-			listener.Close()
-			if sig == os.Interrupt {
-				return fmt.Sprintf("%s was interupted by system signal"), nil
-			}
-			return fmt.Sprintf("%s was killed by system signal"), nil
-		}
-	}
-
-	return usage, nil
-
-}
-
-func acceptConnection(listener net.Listener, listen chan<- net.Conn) {
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			continue
-		}
-		listen <- conn
-	}
-}
-
-func serve(config *Config, client net.Conn) {
-	for {
-		buf := make([]byte, 4096)
-		numbytes, err := client.Read(buf)
-		if numbytes ==0 || err !=nil {
-			return
-		}
-		client.Write(buf[:numbytes])
-		serveHTTP(config)
-	}
-}
-
-func init() {
-	stdlog = log.New(os.Stdout, "", log.Ldate|log.Ltime)
-	errlog = log.New(os.Stderr, "", log.Ldate|log.Ltime)
-}
-
-func main() {
-
-	// TODO: Later in Arch Linux proper.
-	// create hardware info to be written to
-	// /var/run/azalfConfigDaemon/hardware.json
-	//
-	// this is going to be used by dashboard and the bar
-	// to display hardware info
-	//hardwareInfo := HardwareInfo{}
-	//go hardwareListener(&hardwareInfo)
-
-	srv, err := daemon.New(daemonName, daemonDesc, daemon.SystemDaemon, dependencies...)
-	if err != nil {
-		errlog.Fatal(err)
-		os.Exit(1)
-	}
-	service := &Service{srv}
-	status, err := service.Manage()
-	if err != nil {
-		errlog.Println(status, "\nError: ", err)
-		os.Exit(1)
-	}
-	fmt.Println(status)
-
+	return config, nil
 }
 
 // TODO: Finish this
@@ -720,6 +759,12 @@ func (config *Config) AzalfHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (config *Config) getConfigObject(w http.ResponseWriter, r *http.Request) {
+	// ensure the request is a GET
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
@@ -733,6 +778,12 @@ func (config *Config) getConfigObject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (config *Config) getConfigColor(w http.ResponseWriter, r *http.Request) {
+	// ensure the request is a GET
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
@@ -746,6 +797,12 @@ func (config *Config) getConfigColor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (config *Config) getConfigFont(w http.ResponseWriter, r *http.Request) {
+	// ensure the request is a GET
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
@@ -760,6 +817,12 @@ func (config *Config) getConfigFont(w http.ResponseWriter, r *http.Request) {
 }
 
 func (config *Config) getConfigSizing(w http.ResponseWriter, r *http.Request) {
+	// ensure the request is a GET
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
@@ -772,6 +835,12 @@ func (config *Config) getConfigSizing(w http.ResponseWriter, r *http.Request) {
 }
 
 func (config *Config) getConfigSpcecificColor(w http.ResponseWriter, r *http.Request) {
+	// ensure the request is a GET
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	// GET THE COLOR NAME FROM THE URL
 	// seperate the path from the url
 	// get the color name from the path
@@ -793,6 +862,12 @@ func (config *Config) getConfigSpcecificColor(w http.ResponseWriter, r *http.Req
 }
 
 func (config *Config) getConfigSpecificFont(w http.ResponseWriter, r *http.Request) {
+	// ensure the request is a GET
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	// GET THE FONT NAME FROM THE URL
 	// seperate the path from the url
 	// get the font name from the path
@@ -814,6 +889,12 @@ func (config *Config) getConfigSpecificFont(w http.ResponseWriter, r *http.Reque
 }
 
 func (config *Config) getConfigSpecificSizing(w http.ResponseWriter, r *http.Request) {
+	// ensure the request is a GET
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	// GET THE SIZE NAME FROM THE URL
 	// seperate the path from the url
 	// get the size name from the path
@@ -835,6 +916,12 @@ func (config *Config) getConfigSpecificSizing(w http.ResponseWriter, r *http.Req
 }
 
 func serveHTTP(config *Config) {
-	http.HandleFunc("/config", config.AzalfHandler)
+	http.HandleFunc("/config", config.getConfig)
+	http.HandleFunc("/config/colors", config.getConfigColor)
+	http.HandleFunc("/config/fonts", config.getConfigFont)
+	http.HandleFunc("/config/sizing", config.getConfigSizing)
+	http.HandleFunc("/config/colors/", config.getConfigSpecificColor)
+	http.HandleFunc("/config/fonts/", config.getConfigSpecificFont)
+	http.HandleFunc("/config/sizing/", config.getConfigSpecificSizing)
 	http.ListenAndServe(fmt.Sprintf("127.0.0.1:%s", daemonPort), nil)
 }
