@@ -1,4 +1,4 @@
-module azalfConfigDaemon
+module azalf
 
 go 1.18
 

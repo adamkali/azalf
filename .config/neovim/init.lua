@@ -5,6 +5,8 @@ Plug 'github/copilot.vim'
 Plug 'neoclide/coc.nvim', { 'branch': 'release' }
 Plug 'ryanoasis/vim-devicons'
 Plug 'tpope/vim-fugitive'
+Plug 'vbundles/nerdtree'
+Plug 'feline-nvim/feline.nvim'
 
 -- Go Plugins --
 Plug 'fatih/vim-go', { do := { ':GoInstallBinaries' } }
@@ -21,6 +23,8 @@ Plug 'raimon49/requirements.txt.vim', {'for': 'requirements.txt'}
 
 call plug#end()
 
+require('feline').setup()
+
 -- make an http request to the server to get the config colorscheme --
 local https = require('ssl.https')
 local response, code, headers, status = http.request{
@@ -36,5 +40,8 @@ local colors = {}
 -- require json to decode the response --
 local json = require('json')
 colors = json.decode(response)
+
+-- define the colorscheme --
+
 
 
