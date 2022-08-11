@@ -17,7 +17,17 @@ HI SISTERS! This will be meant as a need-to-have/wish-list for an endgame Distro
 
 ## Get Started.
 
-All you will need to get started, is curl... and that is it. This should take care of the rest. Then type: `curl https://github.com/adamkali/azalf.git && cd azalf && sh run.sh`
+All you will need to get started, is curl... and that is it. This should take care of the rest. Then type: 
+```
+    curl https://github.com/adamkali/azalf.git
+    cd ./azalf
+    bash install.sh # STOP HERE AND ENSURE EVERYTHING IS INSTALLED PROPERLY
+    cd ../
+    rm -rf ./azalf
+```
+
+Azalf should take care of everything
+
 
 ### Keybindings
 
