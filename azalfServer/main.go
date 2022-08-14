@@ -100,20 +100,20 @@ func main() {
 	// Check that the user is root and on linux
 	if runtime.GOOS == "linux" {
 		// create a directory for the server if it doesn't exist
-		if _, err := os.Stat("/var/run/azalf"); os.IsNotExist(err) {
-			os.Mkdir("/var/run/azalf", 0755)
+		if _, err := os.Stat("/var/azalf"); os.IsNotExist(err) {
+			os.Mkdir("/var/azalf", 0755)
 		}
 		if err != nil {
 			fmt.Print(err.Error())
 		}
 		// If the log exists, delete it.
-		if _, err := os.Stat("/var/run/azalf/azalf.log"); os.IsNotExist(err) {
-			os.Remove("/var/run/azalf/azalf.log")
+		if _, err := os.Stat("/var/azalf/azalf.log"); os.IsNotExist(err) {
+			os.Remove("/var/azalf/azalf.log")
 		}
 		if err != nil {
 			fmt.Print(err.Error())
 		}
-		serverFile, err = os.Create("/var/run/azalf/server.log")
+		serverFile, err = os.Create("/var/azalf/server.log")
 		if err != nil {
 			log.Fatal("Failed to create server log file")
 		}
@@ -182,9 +182,9 @@ func main() {
 			fmt.Println("  azalf --liscense || -l")
 			fmt.Println("")
 			fmt.Println("Example Use of Server:")
-			fmt.Println(`    command-line:  curl -X GET \\ 
-											-H 'Content-type: application/json' \\ 
-											-H 'Accept: application/json' \\ 
+			fmt.Println(`    command-line:  curl -X GET \\
+											-H 'Content-type: application/json' \\
+											-H 'Accept: application/json' \\
 												http://localhost:9999/config`)
 			fmt.Println("")
 			fmt.Println("    python: requests.get('http://localhost:9999/config')")

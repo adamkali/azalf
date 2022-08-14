@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/user"
 	"runtime"
 	"strconv"
 	"strings"
@@ -26,18 +27,27 @@ func LoadConfig() error {
 
 	utils.AzalfConfig = new(utils.Config)
 
+	// get the current users home directory like this:
+	// homeDir should end up like this: /home/username
+	// force to get the user's home directory even when
+	// running root
 	if runtime.GOOS == "linux" {
-		homeDir, err = os.UserHomeDir()
+		// check if the user is root
+		if os.Getuid() == 0 {
+			//
+			*
+		userCurrent, err := user.Current()
 		if err != nil {
-			log.Println("Error getting user's home directory:", err)
-			return err
+			log.Fatal(err)
 		}
+		homeDir = userCurrent.HomeDir
 		conf, err = ioutil.ReadFile(
 			fmt.Sprintf("%s/.config/azalf/.azalf.yml", homeDir))
 		if err != nil {
 			if utils.Debug {
 				d := utils.CreateDebug(35, utils.ERROR, err.Error())
 				fmt.Println(d.String())
+				fmt.Printf("%s is the current user home directory\n", homeDir)
 			}
 			return fmt.Errorf(`%s is having trouble reading his spellbook from
 	%s\.config\azalf\.azalf.yml`, utils.ServerName, homeDir)
