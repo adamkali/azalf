@@ -73,9 +73,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/user"
 	"runtime"
-	"strconv"
-	"strings"
 
 	"azalf/endpoints"
 	"azalf/utils"
@@ -100,20 +99,14 @@ func main() {
 	// Check that the user is root and on linux
 	if runtime.GOOS == "linux" {
 		// create a directory for the server if it doesn't exist
-		if _, err := os.Stat("/var/azalf"); os.IsNotExist(err) {
-			os.Mkdir("/var/azalf", 0755)
-		}
+		// get the current user home directory
+		userName, err := user.Current()
 		if err != nil {
-			fmt.Print(err.Error())
+			log.Fatal(err)
 		}
-		// If the log exists, delete it.
-		if _, err := os.Stat("/var/azalf/azalf.log"); os.IsNotExist(err) {
-			os.Remove("/var/azalf/azalf.log")
-		}
-		if err != nil {
-			fmt.Print(err.Error())
-		}
-		serverFile, err = os.Create("/var/azalf/server.log")
+		user := userName.HomeDir
+		// make an entry point for the server in the home directory
+		serverFile, err = os.OpenFile(user+"/.local/azalf/server.log", os.O_RDWR|os.O_CREATE, 0666)
 		if err != nil {
 			log.Fatal("Failed to create server log file")
 		}
@@ -173,7 +166,6 @@ func main() {
 			fmt.Println("Happy hacking!")
 			fmt.Println("")
 			fmt.Println("Usage:")
-			fmt.Println("  azalf update")
 			fmt.Println("  azalf stop")
 			fmt.Println("  azalf spells")
 			fmt.Println("  azalf logs")
@@ -207,37 +199,6 @@ func main() {
 			fmt.Println("    github.com/adamkali/azalf")
 			fmt.Println("Then make a pull request!")
 			os.Exit(0)
-		}
-		if os.Args[1] == "update" {
-
-			// check if the server is running
-			// to do this we will do a get request to the server
-			// on / endpoint
-			resp, err := http.Get("http://localhost:9999/")
-			if err != nil {
-				fmt.Println("The server is not running, please start the server")
-				os.Exit(1)
-			}
-			defer resp.Body.Close()
-
-			if strings.Contains(strconv.Itoa(resp.StatusCode), "20") {
-				flag = false
-			}
-
-			log.Printf("%s is updating his spells", utils.ServerName)
-
-			// set var config Config using loadConfig()
-			err = endpoints.LoadConfig()
-			if err != nil {
-				// get the home directory of the user
-				homeDir, err := os.UserHomeDir()
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				log.Printf("%s is having trouble loading his spellbook in %s >> %s", utils.ServerName, homeDir, err)
-				os.Exit(1)
-			}
 		}
 		if os.Args[1] == "stop" {
 			// Stop the server.
@@ -326,24 +287,9 @@ func main() {
 				fmt.Println(d.String())
 			}
 
-			err = endpoints.LoadConfig()
-			if err != nil {
-				log.Fatal(err)
-				os.Exit(1)
-			}
-
 			flag = true
 		}
 	} else if len(os.Args) == 1 {
-		// If the program is called without an argument,
-		// load the config, and then start the server.
-
-		err = endpoints.LoadConfig()
-		if err != nil {
-			log.Fatal(err)
-			os.Exit(1)
-		}
-
 		flag = true
 	} else {
 		fmt.Printf("%s did not recognize that spell. Please use the --help command", utils.ServerName)
@@ -354,8 +300,6 @@ func main() {
 	if flag {
 		// Start the server.
 		// Get time now
-		log.Printf("%s has been summoned.", utils.ServerName)
-
 		serveHTTP(utils.AzalfConfig)
 	} else {
 		log.Printf("%s was consulted but not asked to start slinging spells.", utils.ServerName)
@@ -541,6 +485,9 @@ func (h *HardwareInfo) getGPUInfo() {
 */
 
 func serveHTTP(config *utils.Config) {
+	// Get the hanfler for the Config
+	h := endpoints.NewConfigHandler()
+
 	http.HandleFunc("/",
 		func(w http.ResponseWriter, r *http.Request) {
 			// Just return a 200 OK response
@@ -548,22 +495,22 @@ func serveHTTP(config *utils.Config) {
 			confirmation := fmt.Sprintf("%s is still slingin spells!", utils.ServerName)
 			w.Write([]byte(confirmation))
 		})
-	http.HandleFunc("/config", endpoints.GetConfigObject)
-	http.HandleFunc("/config/colors", endpoints.GetConfigColor)
-	http.HandleFunc("/config/fonts", endpoints.GetConfigFont)
-	http.HandleFunc("/config/sizing", endpoints.GetConfigSizing)
-	http.HandleFunc("/config/colors/normal", endpoints.GetConfigNormalColors)
-	http.HandleFunc("/config/colors/bright", endpoints.GetConfigBrightColors)
-	http.HandleFunc("/config/colors/background", endpoints.GetConfigBackgroundColor)
-	http.HandleFunc("/config/colors/foreground", endpoints.GetConfigForegroundColor)
-	http.HandleFunc("/config/colors/normal/", endpoints.GetConfigSpecificNormalColor)
-	http.HandleFunc("/config/colors/bright/", endpoints.GetConfigSpecificBrightColor)
-	http.HandleFunc("/config/fonts/", endpoints.GetConfigSpecificFont)
-	http.HandleFunc("/config/sizing/fonts", endpoints.GetConfigFontSizes)
-	http.HandleFunc("/config/sizing/fonts/", endpoints.GetConfigSpecificFontSize)
-	http.HandleFunc("/config/sizing/padding", endpoints.GetConfigPadding)
-	http.HandleFunc("/config/sizing/margin", endpoints.GetConfigMargin)
-	http.HandleFunc("/config/sizing/borderRadius", endpoints.GetConfigBorderRadius)
+	http.HandleFunc("/config", h.GetConfigObject)
+	http.HandleFunc("/config/colors", h.GetConfigColor)
+	http.HandleFunc("/config/fonts", h.GetConfigFont)
+	http.HandleFunc("/config/sizing", h.GetConfigSizing)
+	http.HandleFunc("/config/colors/normal", h.GetConfigNormalColors)
+	http.HandleFunc("/config/colors/bright", h.GetConfigBrightColors)
+	http.HandleFunc("/config/colors/background", h.GetConfigBackgroundColor)
+	http.HandleFunc("/config/colors/foreground", h.GetConfigForegroundColor)
+	http.HandleFunc("/config/colors/normal/", h.GetConfigSpecificNormalColor)
+	http.HandleFunc("/config/colors/bright/", h.GetConfigSpecificBrightColor)
+	http.HandleFunc("/config/fonts/", h.GetConfigSpecificFont)
+	http.HandleFunc("/config/sizing/fonts", h.GetConfigFontSizes)
+	http.HandleFunc("/config/sizing/fonts/", h.GetConfigSpecificFontSize)
+	http.HandleFunc("/config/sizing/padding", h.GetConfigPadding)
+	http.HandleFunc("/config/sizing/margin", h.GetConfigMargin)
+	http.HandleFunc("/config/sizing/borderRadius", h.GetConfigBorderRadius)
 
 	// start a TCP listener on the specified port
 

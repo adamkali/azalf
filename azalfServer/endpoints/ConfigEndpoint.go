@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/user"
 	"runtime"
 	"strconv"
 	"strings"
@@ -17,7 +16,29 @@ import (
 	"azalf/utils"
 )
 
-func LoadConfig() error {
+type ConfigHandler struct {
+	config *utils.Config
+}
+
+// make a new Config Handler and load the config
+func NewConfigHandler() *ConfigHandler {
+	// Load the config using the LoadConfig function
+	// and check if there is an error
+	err := LoadConfig(utils.AzalfConfig)
+	if err != nil {
+		log.Fatalf("%s could not load the config: %s", utils.ServerName, err.Error())
+		// make a new debug insstance if the server is in debug mode
+		if utils.Debug {
+			debug := utils.CreateDebug(5, "ERROR", fmt.Sprintf("%s could not load the config: %s", utils.ServerName, err.Error()))
+			fmt.Println(debug.String())
+		}
+		os.Exit(1)
+	}
+	conf := *utils.AzalfConfig
+	return &ConfigHandler{config: &conf}
+}
+
+func LoadConfig(config *utils.Config) error {
 
 	// Get the current User's home directory
 	// get the users os
@@ -25,32 +46,24 @@ func LoadConfig() error {
 	var err error
 	var conf []byte
 
-	utils.AzalfConfig = new(utils.Config)
-
 	// get the current users home directory like this:
 	// homeDir should end up like this: /home/username
 	// force to get the user's home directory even when
 	// running root
 	if runtime.GOOS == "linux" {
 		// check if the user is root
-		if os.Getuid() == 0 {
-			//
-			*
-		userCurrent, err := user.Current()
-		if err != nil {
-			log.Fatal(err)
-		}
-		homeDir = userCurrent.HomeDir
+		userCurrent := os.Getenv("SUDO_USER")
+		homeDir = "/home/" + userCurrent
 		conf, err = ioutil.ReadFile(
-			fmt.Sprintf("%s/.config/azalf/.azalf.yml", homeDir))
+			fmt.Sprintf("%s/.config/azalf/azalf.yml", homeDir))
 		if err != nil {
 			if utils.Debug {
-				d := utils.CreateDebug(35, utils.ERROR, err.Error())
+				d := utils.CreateDebug(59, utils.ERROR, err.Error())
 				fmt.Println(d.String())
 				fmt.Printf("%s is the current user home directory\n", homeDir)
 			}
 			return fmt.Errorf(`%s is having trouble reading his spellbook from
-	%s\.config\azalf\.azalf.yml`, utils.ServerName, homeDir)
+	%s\.config\azalf\azalf.yml`, utils.ServerName, homeDir)
 		}
 	}
 	// DEVEL: THIS APPLICATION IS NOT SUPPORTED ON WINDOWS
@@ -60,7 +73,7 @@ func LoadConfig() error {
 		conf, err = os.ReadFile(utils.DevelopmentFile)
 		if err != nil {
 			if utils.Debug {
-				d := utils.CreateDebug(50, utils.ERROR, err.Error())
+				d := utils.CreateDebug(75, utils.ERROR, err.Error())
 				fmt.Println(d.String())
 			}
 			return fmt.Errorf(`%s is having trouble reading his spellbook from
@@ -69,15 +82,20 @@ func LoadConfig() error {
 	}
 	log.Printf("%s is loading his spellbook from %s",
 		utils.ServerName,
-		fmt.Sprintf("%s\\.config\\azalf\\.azalf.yml", homeDir))
+		fmt.Sprintf("%s\\.config\\azalf\\azalf.yml", homeDir))
+
+	if utils.Debug {
+		d := utils.CreateDebug(75, "", "Loading config \n"+string(conf))
+		fmt.Println(d.String())
+	}
 
 	// Attempt to unmarshal the config file. and then store it into the
 	// config struct initialized in the utils function.
-	err = yaml.Unmarshal(conf, &utils.AzalfConfig)
+	err = yaml.Unmarshal(conf, config)
 
 	if err != nil {
 		if utils.Debug {
-			d := utils.CreateDebug(548, "error", err.Error())
+			d := utils.CreateDebug(91, "error", err.Error())
 			fmt.Println(d.String())
 		}
 		return err
@@ -85,20 +103,24 @@ func LoadConfig() error {
 
 	if utils.AzalfConfig.Colors.Background == "" {
 		if utils.Debug {
-			d := utils.CreateDebug(81, utils.ERROR, "Config not loaded.\n This either means there is no config file, the config file is corrupted, or the file is not being loaded properly.")
-			fmt.Printf("%s; \nThe following string was what was loaded as an input.\n%s\nPlease review the above and continue.", d.String(), string(utils.AzalfConfig.String()))
+			d := utils.CreateDebug(91, utils.ERROR, "Config not loaded.\n This either means there is no config file, the config file is corrupted, or the file is not being loaded properly.")
+			confString, err := json.Marshal(config)
+			if err != nil {
+				log.Fatalf("%s could not encode the utils.AzalfConfig object: %s", utils.ServerName, err.Error())
+			}
+			fmt.Println(d.String() + "\n" + string(confString))
 		}
 		return fmt.Errorf(`%s is missing vital spells from the spellbook.
 		Ensure that the spellbook has valid colors, sizes, and fonts and try again`, utils.ServerName)
 	} else {
 		if runtime.GOOS == "linux" {
 			if utils.Debug {
-				configString, err := json.Marshal(&utils.AzalfConfig)
+				configString, err := json.Marshal(&config)
 				if err != nil {
-					d := utils.CreateDebug(86, utils.ERROR, err.Error())
+					d := utils.CreateDebug(111, utils.ERROR, err.Error())
 					fmt.Println(d.String())
 				}
-				d := utils.CreateDebug(66, utils.SUCCESS, "Config loaded:"+string(configString))
+				d := utils.CreateDebug(91, utils.SUCCESS, "Config loaded:"+string(configString))
 				fmt.Println(d.String())
 			}
 			log.Printf("%s has found spells in %s", utils.ServerName, fmt.Sprintf("%s/.config/azalf/.azalf.yml", homeDir))
@@ -106,12 +128,12 @@ func LoadConfig() error {
 		} else if runtime.GOOS == "windows" {
 			log.Printf("%s has found spells in %s", utils.ServerName, fmt.Sprintf("%s\\.config\\azalf\\.azalf.yml", homeDir))
 			if utils.Debug {
-				configString, err := json.Marshal(utils.AzalfConfig)
+				configString, err := json.Marshal(&config)
 				if err != nil {
-					d := utils.CreateDebug(99, utils.ERROR, err.Error())
+					d := utils.CreateDebug(124, utils.ERROR, err.Error())
 					fmt.Println(d.String())
 				}
-				d := utils.CreateDebug(86, utils.SUCCESS, "Config loaded:"+string(configString))
+				d := utils.CreateDebug(91, utils.SUCCESS, "Config loaded:"+string(configString))
 				fmt.Println(d.String())
 			}
 		}
@@ -119,58 +141,69 @@ func LoadConfig() error {
 	return nil
 }
 
-func GetNormalColor(color string) string {
+//func (h *userHandler) post(w http.ResponseWriter, r *http.Request) {
+
+func (h *ConfigHandler) getNormalColor(color string) string {
 	var returnColor string
+
+	config := h.config
+
 	switch color {
 	case "black":
-		returnColor = utils.AzalfConfig.Colors.Normal.Black
+		returnColor = config.Colors.Normal.Black
 	case "red":
-		returnColor = utils.AzalfConfig.Colors.Normal.Red
+		returnColor = config.Colors.Normal.Red
 	case "green":
-		returnColor = utils.AzalfConfig.Colors.Normal.Green
+		returnColor = config.Colors.Normal.Green
 	case "yellow":
-		returnColor = utils.AzalfConfig.Colors.Normal.Yellow
+		returnColor = config.Colors.Normal.Yellow
 	case "blue":
-		returnColor = utils.AzalfConfig.Colors.Normal.Blue
+		returnColor = config.Colors.Normal.Blue
 	case "magenta":
-		returnColor = utils.AzalfConfig.Colors.Normal.Magenta
+		returnColor = config.Colors.Normal.Magenta
 	case "cyan":
-		returnColor = utils.AzalfConfig.Colors.Normal.Cyan
+		returnColor = config.Colors.Normal.Cyan
 	case "white":
-		returnColor = utils.AzalfConfig.Colors.Normal.White
+		returnColor = config.Colors.Normal.White
 	default:
 		log.Fatalf("%s could not find the color: %s", utils.ServerName, color)
 	}
 	return returnColor
 }
 
-func GetBrightColor(color string) string {
+func (h *ConfigHandler) getBrightColor(color string) string {
 	var returnColor string
+
+	config := h.config
+
 	switch color {
 	case "black":
-		returnColor = utils.AzalfConfig.Colors.Bright.Black
+		returnColor = config.Colors.Bright.Black
 	case "red":
-		returnColor = utils.AzalfConfig.Colors.Bright.Red
+		returnColor = config.Colors.Bright.Red
 	case "green":
-		returnColor = utils.AzalfConfig.Colors.Bright.Green
+		returnColor = config.Colors.Bright.Green
 	case "yellow":
-		returnColor = utils.AzalfConfig.Colors.Bright.Yellow
+		returnColor = config.Colors.Bright.Yellow
 	case "blue":
-		returnColor = utils.AzalfConfig.Colors.Bright.Blue
+		returnColor = config.Colors.Bright.Blue
 	case "magenta":
-		returnColor = utils.AzalfConfig.Colors.Bright.Magenta
+		returnColor = config.Colors.Bright.Magenta
 	case "cyan":
-		returnColor = utils.AzalfConfig.Colors.Bright.Cyan
+		returnColor = config.Colors.Bright.Cyan
 	case "white":
-		returnColor = utils.AzalfConfig.Colors.Bright.White
+		returnColor = config.Colors.Bright.White
 	default:
 		log.Fatalf("%s could not find the color: %s", utils.ServerName, color)
 	}
 	return returnColor
 }
 
-func GetFont(font string) string {
+func (h *ConfigHandler) getFont(font string) string {
 	var returnFont string
+
+	config := h.config
+
 	switch font {
 	// match the font string to the correct config.Font value
 	// Then get the font value from the config.Font struct
@@ -183,140 +216,152 @@ func GetFont(font string) string {
 	// 		Emoji     string `yaml:"emoji"`
 
 	case "monospace":
-		returnFont = utils.AzalfConfig.FontFamilies.Monospace
+		returnFont = config.FontFamilies.Monospace
 	case "sans-serif":
-		returnFont = utils.AzalfConfig.FontFamilies.SansSerif
+		returnFont = config.FontFamilies.SansSerif
 	case "serif":
-		returnFont = utils.AzalfConfig.FontFamilies.Serif
+		returnFont = config.FontFamilies.Serif
 	case "emoji":
-		returnFont = utils.AzalfConfig.FontFamilies.Emoji
+		returnFont = config.FontFamilies.Emoji
 	default:
 		log.Fatalf("%s could not find the font: %s", utils.ServerName, font)
 	}
 	return returnFont
 }
 
-func GetFontSizes(size string) string {
+func (h *ConfigHandler) getFontSizes(size string) string {
 	var returnSize string
+
+	config := h.config
+
 	switch size {
 	case "small":
 		// convert the size to a string
 		// then return the string
-		returnSize = strconv.Itoa(utils.AzalfConfig.Sizing.FontSizes.Small)
+		returnSize = strconv.Itoa(config.Sizing.FontSizes.Small)
 	case "medium":
-		returnSize = strconv.Itoa(utils.AzalfConfig.Sizing.FontSizes.Medium)
+		returnSize = strconv.Itoa(config.Sizing.FontSizes.Medium)
 	case "large":
-		returnSize = strconv.Itoa(utils.AzalfConfig.Sizing.FontSizes.Large)
+		returnSize = strconv.Itoa(config.Sizing.FontSizes.Large)
 	case "x-large":
-		returnSize = strconv.Itoa(utils.AzalfConfig.Sizing.FontSizes.XLarge)
+		returnSize = strconv.Itoa(config.Sizing.FontSizes.XLarge)
 	case "xx-large":
-		returnSize = strconv.Itoa(utils.AzalfConfig.Sizing.FontSizes.XXLarge)
+		returnSize = strconv.Itoa(config.Sizing.FontSizes.XXLarge)
 	case "Huge":
-		returnSize = strconv.Itoa(utils.AzalfConfig.Sizing.FontSizes.Huge)
+		returnSize = strconv.Itoa(config.Sizing.FontSizes.Huge)
 	default:
 		log.Fatalf("%s could not find the size: %s", utils.ServerName, size)
 	}
 	return returnSize
 }
 
-func GetConfigObject(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigObject(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	// get the config from the handler
+	config := c.config
+
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
-	err := json.NewEncoder(w).Encode(&utils.AzalfConfig)
+	err := json.NewEncoder(w).Encode(config)
 	if err != nil {
 		log.Fatalf("%s could not encode the utils.AzalfConfig object: %s", utils.ServerName, err.Error())
 	}
 }
 
-func GetConfigColor(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigColor(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	config := c.config
+
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
-	err := json.NewEncoder(w).Encode(&utils.AzalfConfig.Colors)
+	err := json.NewEncoder(w).Encode(config.Colors)
 	if err != nil {
 		log.Fatalf("%s could not encode the config object: %s", utils.ServerName, err.Error())
 	}
 }
 
-func GetConfigFont(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigFont(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a Get
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	config := c.config
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
-	err := json.NewEncoder(w).Encode(&utils.AzalfConfig.FontFamilies)
+	err := json.NewEncoder(w).Encode(config.FontFamilies)
 
 	if err != nil {
 		log.Fatalf("%s could not encode the config object: %s", utils.ServerName, err.Error())
 	}
 }
 
-func GetConfigSizing(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigSizing(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	config := c.config
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
-	err := json.NewEncoder(w).Encode(&utils.AzalfConfig.Sizing)
+	err := json.NewEncoder(w).Encode(config.Sizing)
 	if err != nil {
 		log.Fatalf("%s could not encode the config object: %s", utils.ServerName, err.Error())
 	}
 }
 
-func GetConfigNormalColors(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigNormalColors(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	config := c.config
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
-	err := json.NewEncoder(w).Encode(&utils.AzalfConfig.Colors.Normal)
+	err := json.NewEncoder(w).Encode(config.Colors.Normal)
 	if err != nil {
 		log.Fatalf("%s could not encode the config object: %s", utils.ServerName, err.Error())
 	}
 }
 
-func GetConfigBrightColors(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigBrightColors(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a Get
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	config := c.config
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
-	err := json.NewEncoder(w).Encode(&utils.AzalfConfig.Colors.Bright)
+	err := json.NewEncoder(w).Encode(config.Colors.Bright)
 	if err != nil {
 		log.Fatalf("%s could not encode the config object: %s", utils.ServerName, err.Error())
 	}
 }
 
-func GetConfigSpecificNormalColor(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigSpecificNormalColor(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -327,7 +372,7 @@ func GetConfigSpecificNormalColor(w http.ResponseWriter, r *http.Request) {
 	// the request path is /config/colors/normal/{:color}
 	// the path parameter is {:color}
 	color := strings.TrimPrefix(r.URL.Path, fmt.Sprintf("http://localhost:%s/config/colors/bright/", utils.ServerPort))
-	res := GetNormalColor(color)
+	res := c.getNormalColor(color)
 
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
@@ -338,39 +383,41 @@ func GetConfigSpecificNormalColor(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetConfigBackgroundColor(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigBackgroundColor(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	config := c.config
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
-	err := json.NewEncoder(w).Encode(&utils.AzalfConfig.Colors.Background)
+	err := json.NewEncoder(w).Encode(config.Colors.Background)
 	if err != nil {
 		log.Fatalf("%s could not encode the config object: %s", utils.ServerName, err.Error())
 	}
 }
 
-func GetConfigForegroundColor(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigForegroundColor(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	config := c.config
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
-	err := json.NewEncoder(w).Encode(&utils.AzalfConfig.Colors.Foreground)
+	err := json.NewEncoder(w).Encode(config.Colors.Foreground)
 	if err != nil {
 		log.Fatalf("%s could not encode the config object: %s", utils.ServerName, err.Error())
 	}
 }
 
-func GetConfigSpecificBrightColor(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigSpecificBrightColor(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -381,7 +428,7 @@ func GetConfigSpecificBrightColor(w http.ResponseWriter, r *http.Request) {
 	// the request path is /config/colors/bright/{:color}
 	// the path parameter is {:color}
 	color := strings.TrimPrefix(r.URL.Path, fmt.Sprintf("http://localhost:%s/config/colors/bright/", utils.ServerPort))
-	res := GetBrightColor(color)
+	res := c.getBrightColor(color)
 
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
@@ -392,7 +439,7 @@ func GetConfigSpecificBrightColor(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetConfigSpecificFont(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigSpecificFont(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -406,18 +453,18 @@ func GetConfigSpecificFont(w http.ResponseWriter, r *http.Request) {
 	specificFont := specificFontPath[3]
 
 	// get the font from the config object
-	specificFont = GetFont(specificFont)
+	specificFont = c.getFont(specificFont)
 
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
-	err := json.NewEncoder(w).Encode(&specificFont)
+	err := json.NewEncoder(w).Encode(specificFont)
 	if err != nil {
 		log.Fatalf("%s could not encode the config object: %s", utils.ServerName, err.Error())
 	}
 }
 
-func GetConfigSpecificFontSize(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigSpecificFontSize(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -425,7 +472,7 @@ func GetConfigSpecificFontSize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sizing := strings.TrimPrefix(r.URL.Path, fmt.Sprintf("http://localhost:%s/config/sizing/fonts/", utils.ServerPort))
-	res := GetFontSizes(sizing)
+	res := c.getFontSizes(sizing)
 
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
@@ -436,39 +483,41 @@ func GetConfigSpecificFontSize(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GetConfigFontSizes(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigFontSizes(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	config := c.config
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
-	err := json.NewEncoder(w).Encode(&utils.AzalfConfig.Sizing.FontSizes)
+	err := json.NewEncoder(w).Encode(config.Sizing.FontSizes)
 	if err != nil {
 		log.Fatalf("%s could not encode the config object: %s", utils.ServerName, err.Error())
 	}
 }
 
-func GetConfigPadding(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigPadding(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	config := c.config
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
-	err := json.NewEncoder(w).Encode(&utils.AzalfConfig.Sizing.Padding)
+	err := json.NewEncoder(w).Encode(config.Sizing.Padding)
 	if err != nil {
 		log.Fatalf("%s could not encode the config object: %s", utils.ServerName, err.Error())
 	}
 }
 
-func GetConfigMargin(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigMargin(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 
 	if r.Method != "GET" {
@@ -476,26 +525,28 @@ func GetConfigMargin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	config := c.config
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
-	err := json.NewEncoder(w).Encode(&utils.AzalfConfig.Sizing.Margin)
+	err := json.NewEncoder(w).Encode(config.Sizing.Margin)
 	if err != nil {
 		log.Fatalf("%s could not encode the config object: %s", utils.ServerName, err.Error())
 	}
 }
 
-func GetConfigBorderRadius(w http.ResponseWriter, r *http.Request) {
+func (c *ConfigHandler) GetConfigBorderRadius(w http.ResponseWriter, r *http.Request) {
 	// ensure the request is a GET
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
+	config := c.config
 	// set up the response header for a json object
 	w.Header().Set("Content-Type", "application/json")
 	// write the json object to the response
-	err := json.NewEncoder(w).Encode(&utils.AzalfConfig.Sizing.BorderRadius)
+	err := json.NewEncoder(w).Encode(config.Sizing.BorderRadius)
 	if err != nil {
 		log.Fatalf("%s could not encode the config object: %s", utils.ServerName, err.Error())
 	}

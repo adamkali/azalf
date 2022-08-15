@@ -4,48 +4,48 @@ import "fmt"
 
 type Config struct {
 	Colors struct {
-		Background string `yaml:"background" json:"background"`
-		Foreground string `yaml:"foreground" json:"foreground"`
+		Background string `yaml:"background" `
+		Foreground string `yaml:"foreground" `
 		Normal     struct {
-			Black   string `yaml:"black" json:"black"`
-			Red     string `yaml:"red" json:"red"`
-			Green   string `yaml:"green" json:"green"`
-			Yellow  string `yaml:"yellow" json:"yellow"`
-			Blue    string `yaml:"blue" json:"blue"`
-			Magenta string `yaml:"magenta" json:"magenta"`
-			Cyan    string `yaml:"cyan" json:"cyan"`
-			White   string `yaml:"white" json:"white"`
-		} `yaml:"normal" json:"normal"`
+			Black   string `yaml:"black" `
+			Red     string `yaml:"red" `
+			Green   string `yaml:"green" `
+			Yellow  string `yaml:"yellow"`
+			Blue    string `yaml:"blue" `
+			Magenta string `yaml:"magenta"`
+			Cyan    string `yaml:"cyan" `
+			White   string `yaml:"white"`
+		} `yaml:"normal"`
 		Bright struct {
-			Black   string `yaml:"black" json:"black"`
-			Red     string `yaml:"red" json:"red"`
-			Green   string `yaml:"green" json:"green"`
-			Yellow  string `yaml:"yellow" json:"yellow"`
-			Blue    string `yaml:"blue" json:"blue"`
-			Magenta string `yaml:"magenta" json:"magenta"`
-			Cyan    string `yaml:"cyan" json:"cyan"`
-			White   string `yaml:"white" json:"white"`
-		} `yaml:"bright" json:"bright"`
-	} `yaml:"colors" json:"colors"`
+			Black   string `yaml:"black"`
+			Red     string `yaml:"red"`
+			Green   string `yaml:"green"`
+			Yellow  string `yaml:"yellow"`
+			Blue    string `yaml:"blue"`
+			Magenta string `yaml:"magenta"`
+			Cyan    string `yaml:"cyan"`
+			White   string `yaml:"white"`
+		} `yaml:"bright"`
+	} `yaml:"colors"`
 	FontFamilies struct {
-		Monospace string `yaml:"monospace" json:"monospace"`
-		SansSerif string `yaml:"sans-serif" json:"sans-serif"`
-		Serif     string `yaml:"serif" json:"serif"`
-		Emoji     string `yaml:"emoji" json:"emoji"`
-	} `yaml:"font-families" json:"font-families"`
+		Monospace string `yaml:"monospace"`
+		SansSerif string `yaml:"sans-serif"`
+		Serif     string `yaml:"serif"`
+		Emoji     string `yaml:"emoji"`
+	} `yaml:"font-families"`
 	Sizing struct {
 		FontSizes struct {
-			Small   int `yaml:"small" json:"small"`
-			Medium  int `yaml:"medium" json:"medium"`
-			Large   int `yaml:"large" json:"large"`
-			XLarge  int `yaml:"x-large" json:"x-large"`
-			XXLarge int `yaml:"xx-large" json:"xx-large"`
-			Huge    int `yaml:"huge" json:"huge"`
-		} `yaml:"font-sizes" json:"font-sizes"`
-		Padding      int `yaml:"padding" json:"padding"`
-		BorderRadius int `yaml:"border-radius" json:"border-radius"`
-		Margin       int `yaml:"margin" json:"margin"`
-	} `yaml:"sizing" json:"sizing"`
+			Small   int `yaml:"small"`
+			Medium  int `yaml:"medium"`
+			Large   int `yaml:"large"`
+			XLarge  int `yaml:"x-large"`
+			XXLarge int `yaml:"xx-large"`
+			Huge    int `yaml:"huge"`
+		} `yaml:"font-sizes"`
+		Padding      int `yaml:"padding"`
+		BorderRadius int `yaml:"border-radius"`
+		Margin       int `yaml:"margin"`
+	} `yaml:"sizing"`
 }
 
 func (c *Config) String() string {
