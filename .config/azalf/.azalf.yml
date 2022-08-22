@@ -1,38 +1,37 @@
-config:
-  colors:
-    background: "#600080"
-    foreground: "#66ccff"
-    normal:
-      black: "#000033"
-      red: "#ff0066"
-      green: "#00ccff"
-      yellow: "#ff00ff"
-      blue: "#0000ff"
-      magenta: "#cc00cc"
-      cyan: "#00ffff"
-      white: "#ffb3d9"
-    bright:
-      black: "#474771"
-      red: "#ff99c2"
-      green: "#66e0ff"
-      yellow: "#ffb3ff"
-      blue: "#8080ff"
-      magenta: "#ff99ff"
-      cyan: "#b3ffff"
-      white: "#ffe6f2"
-  font-families:
-    monospace: "VictorMono Nerd Font Mono"
-    sans-serif: "ttf-liberation-sans"
-    serif: "ttf-liberation-serif"
-    emoji: "joypixels"
-  sizing:
-    font-sizes:
-      small: 10
-      medium: 14
-      large: 18
-      x-large: 22
-      xx-large: 26
-      huge: 30
-    padding: 10
-    border-radius: 10
-    margin: 10
+colors:
+  background: "#600080"
+  foreground: "#66ccff"
+  normal:
+    black: "#000033"
+    red: "#ff0066"
+    green: "#00ccff"
+    yellow: "#ff00ff"
+    blue: "#0000ff"
+    magenta: "#cc00cc"
+    cyan: "#00ffff"
+    white: "#ffb3d9"
+  bright:
+    black: "#474771"
+    red: "#ff99c2"
+    green: "#66e0ff"
+    yellow: "#ffb3ff"
+    blue: "#8080ff"
+    magenta: "#ff99ff"
+    cyan: "#b3ffff"
+    white: "#ffe6f2"
+font-families:
+  monospace: "VictorMono Nerd Font Mono"
+  sans-serif: "ttf-liberation-sans"
+  serif: "ttf-liberation-serif"
+  emoji: "joypixels"
+sizing:
+  font-sizes:
+    small: 10
+    medium: 14
+    large: 18
+    x-large: 22
+    xx-large: 26
+    huge: 30
+  padding: 10
+  border-radius: 10
+  margin: 10

@@ -110,7 +110,28 @@ func main() {
 		if err != nil {
 			log.Fatal("Failed to create server log file")
 		}
+		/* TODO:
+		// also create a file for authentication if it doesn't exist
+		authDir := user + "/.local/azalf/auth"
+		authFile := authDir + "/auth.lck"
+		if _, err := os.Stat(authDir); os.IsNotExist(err) {
+			os.Mkdir(authDir, 0755)
+		}
+		if _, err := os.Stat(authFile); os.IsNotExist(err) {
+			os.Create(authFile)
+			// ask the user for a password to use for authentication
+			fmt.Print("Enter a password to use for authentication: ")
+			var password string
+			fmt.Scanln(&password)
+			// write the password to the file
+			ioutil.WriteFile(authFile, []byte(password), 0644)
+		}
 
+		// print a message to the user that the server can change the password
+		// by making a post request to the server with the password as the body
+		// of the request. { password: "<password>" }
+
+		*/
 	} else if runtime.GOOS == "windows" {
 		// DEVEL: THIS APPLICATION IS ONLY FOR LINUX
 		// DEVEL: WINDOWS IS USED ONLY FOR TESTING
@@ -131,6 +152,23 @@ func main() {
 			fmt.Print("Failed to create server log file")
 		}
 
+		/* TODO:
+		// also create a file for authentication if it doesn't exist
+		authDir := "C:\\azalf\\auth"
+		authFile := authDir + "\\auth.lck"
+		if _, err := os.Stat(authDir); os.IsNotExist(err) {
+			os.Mkdir(authDir, 0755)
+		}
+		if _, err := os.Stat(authFile); os.IsNotExist(err) {
+			os.Create(authFile)
+			// ask the user for a password to use for authentication
+			fmt.Print("Enter a password to use for authentication: ")
+			var password string
+			fmt.Scanln(&password)
+			// write the password to the file
+			ioutil.WriteFile(authFile, []byte(password), 0644)
+		}
+		*/
 	} else {
 		log.Fatal("This program is only supported on Linux and Windows")
 		os.Exit(1)

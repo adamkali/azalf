@@ -55,7 +55,7 @@ func LoadConfig(config *utils.Config) error {
 		userCurrent := os.Getenv("SUDO_USER")
 		homeDir = "/home/" + userCurrent
 		conf, err = ioutil.ReadFile(
-			fmt.Sprintf("%s/.config/azalf/azalf.yml", homeDir))
+			fmt.Sprintf("%s"+utils.DefaultConfig, homeDir))
 		if err != nil {
 			if utils.Debug {
 				d := utils.CreateDebug(59, utils.ERROR, err.Error())
@@ -63,7 +63,7 @@ func LoadConfig(config *utils.Config) error {
 				fmt.Printf("%s is the current user home directory\n", homeDir)
 			}
 			return fmt.Errorf(`%s is having trouble reading his spellbook from
-	%s\.config\azalf\azalf.yml`, utils.ServerName, homeDir)
+	%s/%s`, utils.ServerName, homeDir, utils.DefaultConfig)
 		}
 	}
 	// DEVEL: THIS APPLICATION IS NOT SUPPORTED ON WINDOWS
